@@ -1,9 +1,0 @@
----  # It is a YMAL file
-- name: test event
-  hosts: group_one  # Specify which inventory group ansible should apply this play book to
-  remote_user: ubuntu  # With remote user, we tell ansible which user to use for remote connection
-  # sudo: yes  # To tell ansible how to escalate priviledges on the target system, in this case, sudo is enough
-  # become_user: root
-  tasks:
-    - name: ping them
-      ping:
