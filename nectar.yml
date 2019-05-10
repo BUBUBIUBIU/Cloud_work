@@ -1,0 +1,91 @@
+---
+- hosts: localhost
+  vars_files:
+    - local_vars/group_one.yml
+  gather_facts: true
+  roles:
+    - role: images
+    - role: security-group
+    - role: volume
+    - role: instance
+
+#   post_tasks:
+#     - name: sleep for 100 seconds and continue with play
+#       wait_for: timeout=100
+
+# # - hosts: just_created
+# - hosts: "{{ hostvars['localhost']['worker_group'] }}"
+#   # 以ubuntu的用户身份登陆
+#   remote_user: ubuntu
+#   # 会覆盖这组hosts对象底下所有的操作权限
+#   become: yes
+#   gather_facts: true
+#   # roles:
+#   #   - role: configure-worker-machine
+
+# - hosts: os_instance.results.0.openstack.public_v4
+#   remote_user: ubuntu
+#   become: yes
+#   gather_facts: true
+  
+#   tasks:
+#     - name: Init a new swarm with default parameters
+#       docker_swarm:
+#         state: present
+#       register: result_of_init_swarm
+  
+- hosts: 172.26.37.171
+  remote_user: ubuntu
+  become: yes
+  gather_facts: true
+
+  tasks:
+    - name: Init a new swarm with default parameters
+      docker_swarm:
+        state: present
+      register: result_of_init_swarm
+    
+    - name: Get worker token
+      set_fact:
+        worker_token: '{{ result_of_init_swarm.swarm_facts.JoinTokens.Worker }}'
+    
+- hosts: "{{ hostvars['localhost'].manager_node }}"
+  remote_user: ubuntu
+  become: yes
+  gather_facts: true
+
+  tasks:
+    - name: Init a new swarm with default parameters
+      docker_swarm:
+        state: present
+      register: result_of_init_swarm
+    
+    - name: Get worker token
+      set_fact:
+        worker_token: '{{ result_of_init_swarm.swarm_facts.JoinTokens.Worker }}'
+
+    # - debug:
+    #     msg: '{{ worker_token }}'
+
+- hosts: "{{ hostvars.localhost.worker_node }}"
+  remote_user: ubuntu
+  become: yes
+  gather_facts: true
+  
+  # tasks:
+  # - debug:
+  #       msg: "{{ hostvars['localhost']['manager_node'] }}"
+
+  # - debug:
+  #       msg: "{{ hostvars[ hostvars['localhost']['manager_node'] ]['worker_token']  }}"
+
+  tasks:
+  # - debug:
+  #     msg: "{{ hostvars[ hostvars['localhost']['manager_node'] ].worker_token  }}"
+  - name: Join a swarm
+    docker_swarm:
+        state: join
+        # '{{ansible_host}}' 说的是自己
+        advertise_addr: '{{ hostvars.localhost.worker_node }}'
+        join_token: "{{ hostvars[ hostvars.localhost.manager_node ].worker_token  }}"
+        remote_addrs: [ "{{ hostvars.localhost.manager_node }}:2377" ]

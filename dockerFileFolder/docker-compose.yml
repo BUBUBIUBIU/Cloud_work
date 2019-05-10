@@ -1,0 +1,60 @@
+version: "3"
+
+services:
+
+  couchDB:
+    # container_name: cdb_123
+    image: couchdb
+    ports:
+      - "5984:5984"
+    volumes:
+      - /twitter_data:/opt/couchdb/data
+    # restart: always
+    # environment:
+    #   COUCHDB_USER: xiong
+    #   COUCHDB_PASSWORD: xiong666
+    deploy:
+      mode: replicated
+      replicas: 2
+  
+  newharvester:
+    image: bububiubiu/newharvester:auto_ip
+    # restart: always
+    # network_mode: "host"
+    networks:
+      - outside
+    depends_on:
+      - couchDB
+    deploy:
+      mode: replicated
+      replicas: 2
+  
+  # search_by_name:
+  #   image: bububiubiu/search_by_name:03
+  #   restart: always
+  #   depends_on:
+  #     - newharvester
+  
+  # process:
+  #   image: bububiubiu/process:01
+  #   restart: always
+  #   depends_on:
+  #     - newharvester
+
+  visualizer:
+    image: dockersamples/visualizer
+    ports:
+      - "8080:8080"
+    stop_grace_period: 30s
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  outside:
+    external:
+      name: "host"
+
+

@@ -1,0 +1,9 @@
+- hosts: worker_group
+  # 以ubuntu的用户身份登陆
+  remote_user: ubuntu
+  # 会覆盖这组hosts对象底下所有的操作权限
+  become: yes
+  become_user: root
+  gather_facts: true
+  roles:
+    - role: fix-proxy-problem
