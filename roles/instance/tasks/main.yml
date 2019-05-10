@@ -1,6 +1,6 @@
 ---
 # Create an instance
-- name: Create some instance
+- name: Create some instances
   os_server:
     # name: '{{ instance_name }}'
     name: '{{ item.0 }}'
@@ -21,23 +21,20 @@
     - '{{ os_vol_ids }}'
   register: os_instance
 
-# - name: Get IPs and make a worker group
-#   set_fact:
-#     # worker_t: '{{ worker_t|default([]) + [ item.openstack.public_v4 ] }}'
-#     worker_group: '{{ item.openstack.public_v4 }}'
-#   with_items: '{{ os_instance.results }}'
-#   loop_control:
-#     label: '{{ item.openstack.name }}'
+- name: Modify host_list
+  blockinfile:
+    path: ~/Desktop/ansible_deployment/inventory/host_list
+    block: |
+      [worker_group]
+      {{ os_instance.results.0.openstack.public_v4 }}
+      {{ os_instance.results.1.openstack.public_v4 }}
 
 - name: Label each IP a name
   set_fact:
     manager_node: '{{ os_instance.results.0.openstack.public_v4 }}'
     worker_node: '{{ os_instance.results.1.openstack.public_v4 }}'
- 
-# - name: Create a list of security group names
-#   set_fact:
-#     sg_names: '{{ sg_names|default([]) + [ item.name ] }}'
-#   loop: '{{ security_groups }}'
+
+# ------------------------------------------------------------------------------------------------------------------------
   
 # - debug:
 #     msg: "Instance {{ instance_name }} has been created. IP address is {{ os_instance.openstack.public_v4 }}"
@@ -59,10 +56,10 @@
 #     label: '{{ item.openstack.name }}'
 #   # when: os_instance is defined
 
-# - name: Modify host_list
-#   blockinfile:
-#     path: ~/Desktop/ansible_deployment/inventory/host_list
-#     block: |
-#       [worker_group]
-#       {{ os_instance.results.0.openstack.public_v4 }}
-#       {{ os_instance.results.1.openstack.public_v4 }}
+# - name: Get IPs and make a worker group
+#   set_fact:
+#     # worker_t: '{{ worker_t|default([]) + [ item.openstack.public_v4 ] }}'
+#     worker_group: '{{ item.openstack.public_v4 }}'
+#   with_items: '{{ os_instance.results }}'
+#   loop_control:
+#     label: '{{ item.openstack.name }}'
