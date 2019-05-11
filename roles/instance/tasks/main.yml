@@ -34,6 +34,15 @@
     manager_node: '{{ os_instance.results.0.openstack.public_v4 }}'
     worker_node: '{{ os_instance.results.1.openstack.public_v4 }}'
 
+- name: Generate a in-memory host group (back end)
+  add_host:
+    name: '{{item.openstack.public_v4}}'
+    groups: back_end_group
+  with_items: '{{ os_instance.results }}'
+  loop_control:
+    label: '{{ item.openstack.name }}'
+  # when: os_instance is defined
+
 # ------------------------------------------------------------------------------------------------------------------------
   
 # - debug:
@@ -46,15 +55,6 @@
 #   with_items: '{{ os_instance.results }}'
 #   loop_control:
 #     label: '{{ item.openstack.name }}'
-
-# - name: add hosts
-#   add_host:
-#     name: '{{item.openstack.public_v4}}'
-#     groups: just_created
-#   with_items: '{{ os_instance.results }}'
-#   loop_control:
-#     label: '{{ item.openstack.name }}'
-#   # when: os_instance is defined
 
 # - name: Get IPs and make a worker group
 #   set_fact:
