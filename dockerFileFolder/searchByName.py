@@ -10,8 +10,18 @@ import sys
 import couchdb
 from couchdb import design
 import time
+import socket
 logging.getLogger().setLevel(logging.INFO)
 
+def get_host_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+
+    return ip
 
 def view_unprocessed_raw(db):
     map_fnc = """function(doc) {
@@ -71,7 +81,7 @@ def get_user_timeline_tweets(db_raw,api):
 
 
 if __name__ == '__main__':
-    logging.info("wait for 5min")
+    logging.info("wait for 20s")
     time.sleep(20)
     consumer_key = 'UlcKpGAMU5fW9uHi1xmEHlfF1'
     consumer_secret = 'sHRmEho9FwnOjHYzaNFj010DR0YyoCdW7Ino1l13L9EfeWCr52'
@@ -80,6 +90,16 @@ if __name__ == '__main__':
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_secret)
     api = API(auth,wait_on_rate_limit= True)
+    name = socket.gethostname()
+    if name == 'server-one':
+        temp = 1
+        db_name='raw_data1'
+    if name == 'server-two':
+        temp = 2
+        db_name='raw_data2'
+    if name == 'server-three':
+        temp = 3
+        db_name='raw_data3'
     '''
     consumer_key2='kiLz9KGKoly1YqlFniL91Avcl'
     consumer_secret2='Ff7NxXzN9eUrHOWyWyjlscXwLSC3pUMwYBaVMmy37mOe6yNVUg'
@@ -97,9 +117,13 @@ if __name__ == '__main__':
     auth3.set_access_token(access_token3, access_secret3)
     api3 = API(auth3, wait_on_rate_limit=True)
     '''
-    couch_raw = couchdb.Server('http://172.26.38.74:5984')
+    # couch_raw = couchdb.Server('http://172.26.38.74:5984')
+    ip = get_host_ip()
+    address = 'http://' + 'qwe:qwe@' + ip + ':' + '5984'
+    print(address)
+    couch_raw = couchdb.Server(address)
     try:
-        db_raw = couch_raw['raw_data']
+        db_raw = couch_raw[db_name]
     except Exception:
         logging.error("Raw tweets DB does not exist.")
         sys.exit(2)

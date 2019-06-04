@@ -11,5 +11,4 @@
     label: '{{ item.name }}'
   when: item.name is defined
 
-# - name: Show images
 

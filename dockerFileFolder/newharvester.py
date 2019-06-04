@@ -12,6 +12,7 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 from tweepy.streaming import StreamListener
 
+
 def get_host_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -25,8 +26,8 @@ def get_host_ip():
 def get_database(database_name):
     try:
         ip = get_host_ip()
-        print(ip)
-        address = 'http://' + ip + ':' + '5984'
+        #print(ip)
+        address = 'http://'+ 'qwe:qwe@' + ip + ':' + '5984'
         couch = couchdb.Server(address)
         # Check if database exists, create if not
         db_name = database_name
@@ -65,14 +66,24 @@ class MyListener(StreamListener):
 
     def on_data(self, data):
         raw_tweet = json.loads(data)
-        raw_tweet['_id'] = str(raw_tweet['id'])
-        try:
-            self.db.save(raw_tweet)
-        except couchdb.http.ResourceConflict:
-            logging.info('Ignored duplicate tweet')
+        if "retweeted_status" not in raw_tweet:
+            raw_tweet['_id'] = str(raw_tweet['id'])
+            try:
+                self.db.save(raw_tweet)
+            except couchdb.http.ResourceConflict:
+                #logging.info('Ignored duplicate tweet')
+                pass
         return True
 
     def on_error(self, status):
+        '''
+        print("status", status)
+        print(self.auth_index)
+        newindex = self.auth_index +1
+        thread = MyThread('raw_data',AU,newindex%10)
+        print(newindex)
+        thread.start()
+        '''
         print(status)
         if status == 420:
             # #Returning False on_data method in case rate limit occurs# #
@@ -80,6 +91,7 @@ class MyListener(StreamListener):
             return False
         else:
             logging.error(str(status)+" auth_index:"+str(self.auth_index))
+            return False
 
 
 class MyThread(threading.Thread):
@@ -100,38 +112,57 @@ class MyThread(threading.Thread):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    index = -1
+    name = socket.gethostname()
+    if name == 'server-one':
+        temp = 1
+        db_name='raw_data1'
+    if name == 'server-two':
+        temp = 2
+        db_name='raw_data2'
+    if name == 'server-three':
+        temp = 3
+        db_name='raw_data3'
+    while True:
+        """
+        Melbourne = [144.5990, -38.4339, 145.4666, -37.5675]
+        Brisbane = [152.3828, -27.9386, 153.5467, -26.7922]
+        Canberra = [148.9439, -35.5926, 149.3993, -35.1245]
+        Perth = [115.4495, -32.4695, 116.4152, -31.4551]
+        Adelaide = [138.4362, -35.3503, 138.8480, -34.5716]
+        Sydney = [150.2815, -34.1202, 151.3430, -33.5781]
+        Darwin = [130.8151, -12.4718, 130.9310, -12.3370]
+        """
+        index = index +1
+        AU = [[112.4613, -44.0572, 126.5165, -10.2684],[126.5165, -44.0572, 140.5716, -10.2684],[140.5716, -44.0572, 154.6268, -10.2684]]
+        # 不确定多线程是否会加快速度，一个线程挂了其他也可以继续运行⬅猜想
+        #thread1 = MyThread('raw_data',AU,index)
+        '''
+        thread2 = MyThread('raw_data',AU,1)
+        thread3 = MyThread('raw_data',AU,2)
+        thread4 = MyThread('raw_data',AU,3)
+        thread5 = MyThread('raw_data',AU,4)
+        thread6 = MyThread('raw_data',AU,5)
+        thread7 = MyThread('raw_data',AU,6)
+        '''
 
+        #thread1.start()
+        # 运行前数据库没有创建时会报错，需要暂停一会，如果运行前数据库已经创建了就不需要
+        '''
+        time.sleep(10)
+        thread2.start()
+        thread3.start()
+        thread4.start()
+        thread5.start()
+        thread6.start()
+        thread7.start()
+        '''
+        
+        db = get_database(db_name)
+        listener = MyListener(db, index)
+        auth = listener.get_twitter_auth()
+        stream = Stream(auth, listener)
+        stream.filter(locations=AU[temp-1])
 
-
-    """
-    Melbourne = [144.5990, -38.4339, 145.4666, -37.5675]
-    Brisbane = [152.3828, -27.9386, 153.5467, -26.7922]
-    Canberra = [148.9439, -35.5926, 149.3993, -35.1245]
-    Perth = [115.4495, -32.4695, 116.4152, -31.4551]
-    Adelaide = [138.4362, -35.3503, 138.8480, -34.5716]
-    Sydney = [150.2815, -34.1202, 151.3430, -33.5781]
-    Darwin = [130.8151, -12.4718, 130.9310, -12.3370]
-    """
-    AU = [112.4613, -44.0572, 154.6268, -10.2684]
-    # 不确定多线程是否会加快速度，一个线程挂了其他也可以继续运行⬅猜想
-    thread1 = MyThread('raw_data',AU,3)
-    '''
-    thread2 = MyThread('raw_data',AU,1)
-    thread3 = MyThread('raw_data',AU,2)
-    thread4 = MyThread('raw_data',AU,3)
-    thread5 = MyThread('raw_data',AU,4)
-    thread6 = MyThread('raw_data',AU,5)
-    thread7 = MyThread('raw_data',AU,6)
-    '''
-
-    thread1.start()
-    # 运行前数据库没有创建时会报错，需要暂停一会，如果运行前数据库已经创建了就不需要
-    '''
-    time.sleep(10)
-    thread2.start()
-    thread3.start()
-    thread4.start()
-    thread5.start()
-    thread6.start()
-    thread7.start()
-    '''
+        logging.info("Wait for 10s")
+        time.sleep(10)

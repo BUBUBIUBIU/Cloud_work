@@ -4,10 +4,8 @@ ENV http_proxy="http://wwwproxy.unimelb.edu.au:8000"
 ENV https_proxy="http://wwwproxy.unimelb.edu.au:8000"
 ENV ftp_proxy="http://wwwproxy.unimelb.edu.au:8000"
 
-ADD twitter_credentials.json /
-ADD newharvester.py /
+ADD processedTwitterRetriver.py /
 
-RUN pip install tweepy
 RUN pip install CouchDB
 
-CMD [ "python3", "./newharvester.py" ]
+CMD [ "python3", "./processedTwitterRetriver.py" ]

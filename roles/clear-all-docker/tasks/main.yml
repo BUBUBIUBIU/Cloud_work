@@ -1,0 +1,4 @@
+---
+- name: Clear all docker images, containers
+  shell: |
+    docker stop $(docker ps -a -q) && docker system prune --all --force

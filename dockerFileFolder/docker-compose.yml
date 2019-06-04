@@ -2,45 +2,66 @@ version: "3"
 
 services:
 
-  couchDB:
-    # container_name: cdb_123
-    image: couchdb
-    ports:
-      - "5984:5984"
-    volumes:
-      - /twitter_data:/opt/couchdb/data
-    # restart: always
-    # environment:
-    #   COUCHDB_USER: xiong
-    #   COUCHDB_PASSWORD: xiong666
-    deploy:
-      mode: replicated
-      replicas: 2
-  
   newharvester:
-    image: bububiubiu/newharvester:auto_ip
-    # restart: always
-    # network_mode: "host"
+    image: bububiubiu/newharvester:good
     networks:
       - outside
     depends_on:
       - couchDB
     deploy:
-      mode: replicated
-      replicas: 2
+      mode: global
+      placement:
+        constraints: [node.hostname != web-server]
   
-  # search_by_name:
-  #   image: bububiubiu/search_by_name:03
-  #   restart: always
-  #   depends_on:
-  #     - newharvester
+  search_by_name:
+    image: bububiubiu/search_by_name:good
+    networks:
+      - outside
+    depends_on:
+      - newharvester
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.hostname != web-server]
   
-  # process:
-  #   image: bububiubiu/process:01
-  #   restart: always
-  #   depends_on:
-  #     - newharvester
+  process:
+    image: bububiubiu/process:good
+    networks:
+      - outside
+    depends_on:
+      - newharvester
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.hostname != web-server]
 
+  gluttony_analysis:
+    image: bububiubiu/gluttony_analysis:good
+    networks:
+      - outside
+    depends_on:
+      - newharvester
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.hostname != web-server]
+  
+  retriver:
+    image: bububiubiu/processed_twitter_retriver:good
+    networks:
+      - outside
+    deploy:
+      placement:
+        constraints: [node.hostname == web-server] 
+  
+  webapp:
+    image: bububiubiu/webapp:p5000
+    networks:
+      - outside
+    deploy:
+      placement:
+        constraints: [node.hostname == web-server] 
+  
   visualizer:
     image: dockersamples/visualizer
     ports:
@@ -56,5 +77,4 @@ networks:
   outside:
     external:
       name: "host"
-
 

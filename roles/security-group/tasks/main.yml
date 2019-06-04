@@ -21,30 +21,17 @@
     protocol: '{{ item.protocol }}'
     port_range_min: '{{ item.port_range_min }}'
     port_range_max: '{{ item.port_range_max }}'
-    remote_ip_prefix: '{{ item.remote_ip_prefix }}'   
+    remote_ip_prefix: '{{ item.remote_ip_prefix }}'
     state: present
   loop: '{{ security_groups }}'
   when: item.name != 'Internal'
 
-# Create internal group rules
-- name: Create internal group rules of tcp and udp
+- name: Create internal group rules
   os_security_group_rule:
-    security_group: Internal
-    protocol: '{{ item }}'
-    port_range_min: 1
-    port_range_max: 65535
-    # remote_ip_prefix: '{{ item.remote_ip_prefix }}'  
-    remote_group: Internal
+    security_group: '{{ item.name }}'
+    protocol: '{{ item.protocol }}'
+    port_range_min: '{{ item.port_range_min }}'
+    port_range_max: '{{ item.port_range_max }}'
+    remote_group: '{{ item.remote_group }}'
     state: present
-  with_items: 
-    - tcp
-    - udp
-
-- name: Create internal group rule of icmp
-  os_security_group_rule:
-    security_group: Internal
-    protocol: icmp
-    port_range_min: 0
-    port_range_max: 255
-    remote_group: Internal
-    state: present
+  loop: '{{ internal_group }}'
